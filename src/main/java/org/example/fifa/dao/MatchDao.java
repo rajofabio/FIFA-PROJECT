@@ -79,4 +79,26 @@ public class MatchDao {
             stmt.executeUpdate();
         }
     }
+
+
+    public void update(Match match) throws SQLException {
+        String sql = "UPDATE matches SET home_club_id = ?, away_club_id = ?, stadium = ?, match_datetime = ?, " +
+                "status = ?, home_score = ?, away_score = ?, season_id = ? WHERE id = ?";
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, match.getHomeClubId());
+            stmt.setString(2, match.getAwayClubId());
+            stmt.setString(3, match.getStadium());
+            stmt.setObject(4, match.getMatchDatetime()); // Utilisation de LocalDateTime
+            stmt.setString(5, match.getStatus().name());
+            stmt.setInt(6, match.getHomeScore());
+            stmt.setInt(7, match.getAwayScore());
+            stmt.setString(8, match.getSeasonId());
+            stmt.setString(9, match.getId()); // L'ID est utilisé dans la clause WHERE
+
+            stmt.executeUpdate(); // Exécution de la mise à jour
+        }
+    }
+
 }

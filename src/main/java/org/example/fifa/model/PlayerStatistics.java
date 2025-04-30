@@ -12,5 +12,5 @@ public class PlayerStatistics {
     private String playerId;
     private String seasonId;
     private int scoredGoals;
-    private int playingTime; // en minutes
+    private int playingTime;
 }

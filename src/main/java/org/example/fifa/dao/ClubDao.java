@@ -44,10 +44,35 @@ public class ClubDao {
                 club.setYearCreation(rs.getInt("year_creation"));
                 club.setStadium(rs.getString("stadium"));
                 club.setCoach(new Coach(rs.getString("coach_name"), rs.getString("coach_nationality")));
-                club.setChampionshipId(rs.getString("championship_id"));
                 clubs.add(club);
             }
         }
         return clubs;
     }
+    public Club findById(String id) throws SQLException {
+        String sql = "SELECT * FROM clubs WHERE id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    Club club = new Club();
+                    club.setId(rs.getString("id"));
+                    club.setName(rs.getString("name"));
+                    club.setAcronym(rs.getString("acronym"));
+                    club.setYearCreation(rs.getInt("year_creation"));
+                    club.setStadium(rs.getString("stadium"));
+                    club.setCoach(new Coach(
+                            rs.getString("coach_name"),
+                            rs.getString("coach_nationality")
+                    ));
+                    return club;
+                } else {
+                    return null;
+                }
+            }
+        }
+    }
+
 }

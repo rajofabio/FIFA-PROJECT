@@ -15,6 +15,7 @@ public class Season {
     private String alias;
     private Status status = Status.NOT_STARTED;
 
+
     public enum Status {
         NOT_STARTED, STARTED, FINISHED
     }

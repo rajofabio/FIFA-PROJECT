@@ -21,6 +21,8 @@ public class Match {
     private int awayScore;
     private String seasonId;
 
+
+
     public enum Status {
         NOT_STARTED, STARTED, FINISHED
     }

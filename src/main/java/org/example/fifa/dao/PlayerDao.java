@@ -49,4 +49,24 @@ public class PlayerDao {
         }
         return players;
     }
+    public List<Player> findAll() throws SQLException {
+        List<Player> players = new ArrayList<>();
+        String sql = "SELECT * FROM players";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                Player player = new Player();
+                player.setId(rs.getString("id"));
+                player.setName(rs.getString("name"));
+                player.setNumber(rs.getInt("number"));
+                player.setPosition(Player.Position.valueOf(rs.getString("position")));
+                player.setNationality(rs.getString("nationality"));
+                player.setAge(rs.getInt("age"));
+                player.setClubId(rs.getString("club_id"));
+                players.add(player);
+            }
+        }
+        return players;
+    }
 }

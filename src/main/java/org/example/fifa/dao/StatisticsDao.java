@@ -65,4 +65,50 @@ public class StatisticsDao {
         }
         return stats;
     }
+
+
+    public void updateClubStats(String homeClubId, String seasonId, int homePoints, int homeScore, int awayScore, int awayPoints) throws SQLException {
+        String sql = """
+        INSERT INTO club_statistics 
+        (club_id, season_id, ranking_points, scored_goals, conceded_goals, clean_sheets) 
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON CONFLICT (club_id, season_id) 
+        DO UPDATE SET 
+            ranking_points = club_statistics.ranking_points + ?,
+            scored_goals = club_statistics.scored_goals + ?,
+            conceded_goals = club_statistics.conceded_goals + ?,
+            clean_sheets = club_statistics.clean_sheets + ?
+    """;
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            // Mise à jour pour le club à domicile
+            stmt.setString(1, homeClubId);
+            stmt.setString(2, seasonId);
+            stmt.setInt(3, homePoints);  // Points gagnés par le club à domicile
+            stmt.setInt(4, homeScore);   // Nombre de buts marqués par le club à domicile
+            stmt.setInt(5, awayScore);   // Nombre de buts encaissés par le club à domicile
+            stmt.setInt(6, homeScore == 0 ? 1 : 0); // Clean sheet (si aucune goal n'a été encaissé)
+            stmt.setInt(7, homePoints);  // Ajout des points obtenus par le club à domicile
+            stmt.setInt(8, homeScore);   // Ajout des buts marqués par le club à domicile
+            stmt.setInt(9, awayScore);   // Ajout des buts encaissés par le club à domicile
+            stmt.setInt(10, homeScore == 0 ? 1 : 0); // Ajout du clean sheet
+            stmt.executeUpdate();
+
+            // Mise à jour pour le club à l'extérieur
+            stmt.setString(1, homeClubId);
+            stmt.setString(2, seasonId);
+            stmt.setInt(3, homePoints);  // Points gagnés par le club à domicile
+            stmt.setInt(4, homeScore);   // Nombre de buts marqués par le club à domicile
+            stmt.setInt(5, awayScore);   // Nombre de buts encaissés par le club à domicile
+            stmt.setInt(6, homeScore == 0 ? 1 : 0); // Clean sheet (si aucune goal n'a été encaissé)
+            stmt.setInt(7, homePoints);  // Ajout des points obtenus par le club à domicile
+            stmt.setInt(8, homeScore);   // Ajout des buts marqués par le club à domicile
+            stmt.setInt(9, awayScore);   // Ajout des buts encaissés par le club à domicile
+            stmt.setInt(10, homeScore == 0 ? 1 : 0); // Ajout du clean sheet
+            stmt.executeUpdate();
+        }
+    }
+
 }
