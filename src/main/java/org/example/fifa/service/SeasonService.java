@@ -20,4 +20,19 @@ public class SeasonService {
     public List<Season> findAll() throws SQLException {
         return seasonDao.findAll();
     }
+    public Season create(Season season) throws SQLException {
+        return seasonDao.save(season);
+    }
+    public void updateStatusByYear(int year, Season.Status newStatus) throws SQLException {
+        List<Season> all = seasonDao.findAll();
+        for (Season season : all) {
+            if (season.getYear() == year) {
+                season.setStatus(newStatus);
+                seasonDao.update(season);
+                return;
+            }
+        }
+        throw new IllegalArgumentException("Season with year " + year + " not found");
+    }
+
 }

@@ -1,13 +1,15 @@
 package org.example.fifa.Mapper;
 
-import lombok.RequiredArgsConstructor;
+import org.example.fifa.Rest.CreateSeasonRest;
 import org.example.fifa.model.Season;
 import org.example.fifa.rest.SeasonRest;
 import org.springframework.stereotype.Component;
 
-@RequiredArgsConstructor
+import java.util.UUID;
+
 @Component
 public class SeasonRestMapper {
+
     public SeasonRest toRest(Season model) {
         SeasonRest rest = new SeasonRest();
         rest.setId(model.getId());
@@ -15,5 +17,14 @@ public class SeasonRestMapper {
         rest.setAlias(model.getAlias());
         rest.setStatus(model.getStatus().name());
         return rest;
+    }
+
+    public Season toDomain(CreateSeasonRest rest) {
+        Season season = new Season();
+        season.setId(UUID.randomUUID().toString());
+        season.setYear(rest.getYear());
+        season.setAlias(rest.getAlias());
+        season.setStatus(Season.Status.NOT_STARTED);
+        return season;
     }
 }
