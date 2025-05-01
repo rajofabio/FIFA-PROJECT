@@ -45,3 +45,5 @@ CREATE TABLE IF NOT EXISTS matches (
     CONSTRAINT fk_away_club FOREIGN KEY (away_club_id) REFERENCES clubs(id),
     CONSTRAINT fk_season FOREIGN KEY (season_id) REFERENCES seasons(id)
     );
+
+
