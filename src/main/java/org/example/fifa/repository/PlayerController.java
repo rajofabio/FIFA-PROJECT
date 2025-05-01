@@ -19,4 +19,11 @@ public class PlayerController {
     public List<PlayerRest> getAllPlayers() throws SQLException {
         return playerService.getAllPlayers();
     }
+
+    @PutMapping
+    public void saveAllPlayers(@RequestBody List<PlayerRest> playerRest) throws SQLException {
+        playerService.saveAllPlayers(playerRest);
+    }
+
+
 }

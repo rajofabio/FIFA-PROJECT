@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 public class PlayerService {
     private final PlayerDao playerDao;
     private final ClubDao clubDao;
-    private final PlayerRestMapper playerRestMapper;
+    private final PlayerRestMapper  playerRestMapper;
 
     public List<PlayerRest> getAllPlayers() throws SQLException {
         List<Player> players = playerDao.findAll();
@@ -36,4 +36,11 @@ public class PlayerService {
                 })
                 .collect(Collectors.toList());
     }
+    public void saveAllPlayers(List<PlayerRest> playerRests) throws SQLException {
+        for (PlayerRest rest : playerRests) {
+            Player player = playerRestMapper.toDomain(rest);
+            playerDao.save(player);
+        }
+    }
+
 }

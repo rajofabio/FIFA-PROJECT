@@ -1,16 +1,15 @@
 package org.example.fifa.model;
 
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
 import java.util.UUID;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
+@Builder
 public class Player {
     private String id = UUID.randomUUID().toString();
     private String name;

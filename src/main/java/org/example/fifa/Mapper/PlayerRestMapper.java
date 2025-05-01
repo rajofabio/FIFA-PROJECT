@@ -19,7 +19,6 @@ public class PlayerRestMapper {
     private final ClubService clubService;
 
 
-
     private ClubRest toRest(Club club) {
         return ClubRest.builder()
                 .id(club.getId())
@@ -36,7 +35,9 @@ public class PlayerRestMapper {
                 .name(coach.getName())
                 .nationality(coach.getNationality())
                 .build();
-    }public PlayerRest toRest(Player player, Club club) {
+    }
+
+    public PlayerRest toRest(Player player, Club club) {
         return PlayerRest.builder()
                 .id(player.getId())
                 .name(player.getName())
@@ -48,4 +49,19 @@ public class PlayerRestMapper {
                 .build();
     }
 
+    public Player toDomain(PlayerRest rest) throws SQLException {
+        Club club = null;
+        if (rest.getClub() != null) {
+            club = clubService.findById(rest.getClub().getId());
+        }
+        return Player.builder()
+                .id(rest.getId())
+                .name(rest.getName())
+                .number(rest.getNumber())
+                .position(Player.Position.valueOf(rest.getPosition().toUpperCase()))
+                .nationality(rest.getNationality())
+                .age(rest.getAge())
+                .club(club)
+                .build();
+    }
 }
