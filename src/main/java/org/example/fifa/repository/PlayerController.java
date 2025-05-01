@@ -1,5 +1,6 @@
 package org.example.fifa.repository;
 
+import lombok.RequiredArgsConstructor;
 import org.example.fifa.Rest.PlayerRest;
 import org.example.fifa.model.Player;
 import org.example.fifa.service.PlayerService;
@@ -10,13 +11,9 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/players")
+@RequiredArgsConstructor
 public class PlayerController {
-
     private final PlayerService playerService;
-
-    public PlayerController(PlayerService playerService) {
-        this.playerService = playerService;
-    }
 
     @GetMapping
     public List<PlayerRest> getAllPlayers() throws SQLException {

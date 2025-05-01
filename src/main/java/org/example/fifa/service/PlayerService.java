@@ -15,22 +15,25 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Service
+@RequiredArgsConstructor
+public class PlayerService {
+    private final PlayerDao playerDao;
+    private final ClubDao clubDao;
+    private final PlayerRestMapper playerRestMapper;
 
-    @Service
-    public class PlayerService {
+    public List<PlayerRest> getAllPlayers() throws SQLException {
+        List<Player> players = playerDao.findAll();
 
-        private final PlayerDao playerDao;
-        private final PlayerRestMapper playerRestMapper;
-
-        public PlayerService(PlayerDao playerDao, PlayerRestMapper playerRestMapper) {
-            this.playerDao = playerDao;
-            this.playerRestMapper = playerRestMapper;
-
-        }
-
-        public List<PlayerRest> getAllPlayers() throws SQLException {
-            return playerDao.findAll().stream()
-                    .map(player -> playerRestMapper.toRest(player, player.getClub()))
-                    .collect(Collectors.toList());
-        }
+        return players.stream()
+                .map(player -> {
+                    try {
+                        Club club = player.getClubId() != null ? clubDao.findById(player.getClubId()) : null;
+                        return playerRestMapper.toRest(player, club);
+                    } catch (SQLException e) {
+                        throw new RuntimeException("Erreur lors du chargement du club pour le joueur : " + player.getId(), e);
+                    }
+                })
+                .collect(Collectors.toList());
     }
+}

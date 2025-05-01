@@ -44,7 +44,7 @@ public class PlayerRestMapper {
                 .position(player.getPosition().name())
                 .nationality(player.getNationality())
                 .age(player.getAge())
-                .club(player.getClub() != null ? toRest(player.getClub()) : null)
+                .club(club != null ? toRest(club) : null)
                 .build();
     }
 
