@@ -47,7 +47,6 @@ public class SeasonDao {
         return seasons;
     }
 
-    // Méthode pour récupérer une saison par son ID
     public Season findById(String id) throws SQLException {
         String sql = "SELECT * FROM seasons WHERE id = ?";
         try (Connection conn = dataSource.getConnection();

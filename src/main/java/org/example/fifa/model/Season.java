@@ -17,6 +17,6 @@ public class Season {
 
 
     public enum Status {
-        NOT_STARTED, STARTED, FINISHED
+        NOT_STARTED, STARTED, FINISHED ,ONGOING
     }
 }
