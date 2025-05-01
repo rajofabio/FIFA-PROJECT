@@ -13,6 +13,8 @@ import org.example.fifa.model.Club;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -21,7 +23,6 @@ public class PlayerService {
     private final PlayerDao playerDao;
     private final ClubDao clubDao;
     private final PlayerRestMapper  playerRestMapper;
-
     public List<PlayerRest> getAllPlayers() throws SQLException {
         List<Player> players = playerDao.findAll();
 
@@ -43,4 +44,37 @@ public class PlayerService {
         }
     }
 
+
+
+    public List<Player> getPlayersByClubId(String clubId) throws SQLException {
+        return playerDao.findByClubId(clubId);
+    }
+
+
+    public void addPlayersToClub(String clubId, List<Player> players) throws SQLException {
+        for (Player player : players) {
+            if (player.getId() != null && !player.getId().isEmpty()) {
+                Optional<Player> existingOpt = Optional.ofNullable(playerDao.findById(player.getId()));
+                if (existingOpt.isPresent()) {
+                    Player existing = existingOpt.get();
+                    if (existing.getClubId() != null) {
+                        throw new IllegalArgumentException("Player " + player.getId() + " is already attached to a club.");
+                    }
+                    existing.setClubId(clubId);
+                    playerDao.updateClubOnly(existing);
+                } else {
+                    throw new IllegalArgumentException("Player " + player.getId() + " does not exist.");
+                }
+            } else {
+                player.setId(UUID.randomUUID().toString());
+                player.setClubId(clubId);
+                playerDao.save(player);
+            }
+        }
+    }
+
+
+    public void updatePlayer(Player player) throws SQLException {
+        playerDao.update(player);
+    }
 }

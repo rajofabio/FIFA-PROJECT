@@ -11,6 +11,7 @@ import org.example.fifa.service.ClubService;
 import org.springframework.stereotype.Component;
 
 import java.sql.SQLException;
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -63,5 +64,21 @@ public class PlayerRestMapper {
                 .age(rest.getAge())
                 .club(club)
                 .build();
+    }
+    public PlayerRest toRest(Player player) {
+        return PlayerRest.builder()
+                .id(player.getId())
+                .name(player.getName())
+                .number(player.getNumber())
+                .position(String.valueOf(player.getPosition()))
+                .nationality(player.getNationality())
+                .age(player.getAge())
+                .build();
+    }
+
+    public List<PlayerRest> toRestList(List<Player> players) {
+        return players.stream()
+                .map(this::toRest)
+                .toList();
     }
 }

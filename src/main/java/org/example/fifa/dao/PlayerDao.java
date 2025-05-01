@@ -69,4 +69,49 @@ public class PlayerDao {
         }
         return players;
     }
+    public void update(Player player) throws SQLException {
+        String sql = "UPDATE players SET name = ?, number = ?, position = ?, nationality = ?, age = ?, club_id = ? WHERE id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, player.getName());
+            stmt.setInt(2, player.getNumber());
+            stmt.setString(3, player.getPosition().name());
+            stmt.setString(4, player.getNationality());
+            stmt.setInt(5, player.getAge());
+            stmt.setString(6, player.getClubId());
+            stmt.setString(7, player.getId());
+            stmt.executeUpdate();
+        }
+    }
+    public Player findById(String id) throws SQLException {
+        String sql = "SELECT * FROM players WHERE id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    Player player = new Player();
+                    player.setId(rs.getString("id"));
+                    player.setName(rs.getString("name"));
+                    player.setNumber(rs.getInt("number"));
+                    player.setPosition(Player.Position.valueOf(rs.getString("position")));
+                    player.setNationality(rs.getString("nationality"));
+                    player.setAge(rs.getInt("age"));
+                    player.setClubId(rs.getString("club_id"));
+                    return player;
+                }
+            }
+        }
+        return null;
+    }
+    public void updateClubOnly(Player player) throws SQLException {
+        String sql = "UPDATE players SET club_id = ? WHERE id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, player.getClubId());
+            stmt.setString(2, player.getId());
+            stmt.executeUpdate();
+        }
+    }
+
 }
