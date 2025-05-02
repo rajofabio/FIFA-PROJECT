@@ -23,16 +23,15 @@ public class SeasonService {
     public Season create(Season season) throws SQLException {
         return seasonDao.save(season);
     }
-    public void updateStatusByYear(int year, Season.Status newStatus) throws SQLException {
+    public Season updateStatusByYear(int year, Season.Status newStatus) throws SQLException {
         List<Season> all = seasonDao.findAll();
         for (Season season : all) {
             if (season.getYear() == year) {
                 season.setStatus(newStatus);
                 seasonDao.update(season);
-                return;
+                return season;
             }
         }
         throw new IllegalArgumentException("Season with year " + year + " not found");
     }
-
 }

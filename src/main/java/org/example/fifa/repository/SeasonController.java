@@ -49,10 +49,11 @@ public class SeasonController {
         return ResponseEntity.ok(created);
     }
     @PutMapping("/{seasonYear}/status")
-    public ResponseEntity<Void> updateSeasonStatus(@PathVariable int seasonYear,
-                                                   @RequestBody UpdateSeasonStatusRest request) throws SQLException {
+    public ResponseEntity<SeasonRest> updateSeasonStatus(@PathVariable int seasonYear,
+                                                         @RequestBody UpdateSeasonStatusRest request) throws SQLException {
         Season.Status newStatus = Season.Status.valueOf(request.getStatus());
-        seasonService.updateStatusByYear(seasonYear, newStatus);
-        return ResponseEntity.noContent().build();
+        Season updated = seasonService.updateStatusByYear(seasonYear, newStatus);
+        SeasonRest response = seasonRestMapper.toRest(updated);
+        return ResponseEntity.ok(response);
     }
 }

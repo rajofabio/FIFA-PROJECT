@@ -3,6 +3,7 @@ package org.example.fifa.dao;
 import lombok.RequiredArgsConstructor;
 import org.example.fifa.model.Player;
 import org.springframework.stereotype.Repository;
+
 import javax.sql.DataSource;
 import java.sql.*;
 import java.util.ArrayList;
@@ -36,19 +37,12 @@ public class PlayerDao {
             stmt.setString(1, clubId);
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
-                Player player = new Player();
-                player.setId(rs.getString("id"));
-                player.setName(rs.getString("name"));
-                player.setNumber(rs.getInt("number"));
-                player.setPosition(Player.Position.valueOf(rs.getString("position")));
-                player.setNationality(rs.getString("nationality"));
-                player.setAge(rs.getInt("age"));
-                player.setClubId(rs.getString("club_id"));
-                players.add(player);
+                players.add(mapResultSetToPlayer(rs));
             }
         }
         return players;
     }
+
     public List<Player> findAll() throws SQLException {
         List<Player> players = new ArrayList<>();
         String sql = "SELECT * FROM players";
@@ -56,19 +50,26 @@ public class PlayerDao {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             ResultSet rs = stmt.executeQuery();
             while (rs.next()) {
-                Player player = new Player();
-                player.setId(rs.getString("id"));
-                player.setName(rs.getString("name"));
-                player.setNumber(rs.getInt("number"));
-                player.setPosition(Player.Position.valueOf(rs.getString("position")));
-                player.setNationality(rs.getString("nationality"));
-                player.setAge(rs.getInt("age"));
-                player.setClubId(rs.getString("club_id"));
-                players.add(player);
+                players.add(mapResultSetToPlayer(rs));
             }
         }
         return players;
     }
+
+    public Player findById(String id) throws SQLException {
+        String sql = "SELECT * FROM players WHERE id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, id);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToPlayer(rs);
+                }
+            }
+        }
+        return null;
+    }
+
     public void update(Player player) throws SQLException {
         String sql = "UPDATE players SET name = ?, number = ?, position = ?, nationality = ?, age = ?, club_id = ? WHERE id = ?";
         try (Connection conn = dataSource.getConnection();
@@ -83,27 +84,7 @@ public class PlayerDao {
             stmt.executeUpdate();
         }
     }
-    public Player findById(String id) throws SQLException {
-        String sql = "SELECT * FROM players WHERE id = ?";
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, id);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    Player player = new Player();
-                    player.setId(rs.getString("id"));
-                    player.setName(rs.getString("name"));
-                    player.setNumber(rs.getInt("number"));
-                    player.setPosition(Player.Position.valueOf(rs.getString("position")));
-                    player.setNationality(rs.getString("nationality"));
-                    player.setAge(rs.getInt("age"));
-                    player.setClubId(rs.getString("club_id"));
-                    return player;
-                }
-            }
-        }
-        return null;
-    }
+
     public void updateClubOnly(Player player) throws SQLException {
         String sql = "UPDATE players SET club_id = ? WHERE id = ?";
         try (Connection conn = dataSource.getConnection();
@@ -114,4 +95,24 @@ public class PlayerDao {
         }
     }
 
+    public void detachPlayersFromClub(String clubId) throws SQLException {
+        String sql = "UPDATE players SET club_id = NULL WHERE club_id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, clubId);
+            stmt.executeUpdate();
+        }
+    }
+
+    private Player mapResultSetToPlayer(ResultSet rs) throws SQLException {
+        Player player = new Player();
+        player.setId(rs.getString("id"));
+        player.setName(rs.getString("name"));
+        player.setNumber(rs.getInt("number"));
+        player.setPosition(Player.Position.valueOf(rs.getString("position")));
+        player.setNationality(rs.getString("nationality"));
+        player.setAge(rs.getInt("age"));
+        player.setClubId(rs.getString("club_id"));
+        return player;
+    }
 }

@@ -38,7 +38,7 @@ public class ClubController {
     }
 
     @PostMapping
-    public ResponseEntity<Void> create(@RequestBody ClubRest clubRest) throws SQLException {
+    public ResponseEntity<ClubRest> create(@RequestBody ClubRest clubRest) throws SQLException {
         clubService.save(mapper.toDomain(clubRest));
         return ResponseEntity.ok().build();
     }

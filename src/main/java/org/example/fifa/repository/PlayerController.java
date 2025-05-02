@@ -2,7 +2,6 @@ package org.example.fifa.repository;
 
 import lombok.RequiredArgsConstructor;
 import org.example.fifa.Rest.PlayerRest;
-import org.example.fifa.model.Player;
 import org.example.fifa.service.PlayerService;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,14 +14,20 @@ import java.util.List;
 public class PlayerController {
     private final PlayerService playerService;
 
-    @GetMapping
-    public List<PlayerRest> getAllPlayers() throws SQLException {
-        return playerService.getAllPlayers();
+    @PutMapping
+    public List<PlayerRest> saveAllPlayers(@RequestBody List<PlayerRest> playerRest) throws SQLException {
+        playerService.saveAllPlayers(playerRest);
+        return playerRest;
     }
 
-    @PutMapping
-    public void saveAllPlayers(@RequestBody List<PlayerRest> playerRest) throws SQLException {
-        playerService.saveAllPlayers(playerRest);
+    @GetMapping
+    public List<PlayerRest> getPlayersFiltered(
+            @RequestParam(required = false) String name,
+            @RequestParam(required = false) Integer ageMinimum,
+            @RequestParam(required = false) Integer ageMaximum,
+            @RequestParam(required = false) String clubName
+    ) throws SQLException {
+        return playerService.searchPlayers(name, ageMinimum, ageMaximum, clubName);
     }
 
 }
