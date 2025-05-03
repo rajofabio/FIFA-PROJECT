@@ -1,4 +1,4 @@
-package org.example.fifa.rest;
+package org.example.fifa.Rest;
 
 import lombok.Data;
 

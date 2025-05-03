@@ -1,8 +1,9 @@
 package org.example.fifa.Mapper;
 
 import org.example.fifa.Rest.CreateSeasonRest;
+import org.example.fifa.Rest.SeasonRest;
 import org.example.fifa.model.Season;
-import org.example.fifa.rest.SeasonRest;
+
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;

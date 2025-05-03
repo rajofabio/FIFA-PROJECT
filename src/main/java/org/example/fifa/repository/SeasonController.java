@@ -4,9 +4,10 @@ import lombok.RequiredArgsConstructor;
 
 import org.example.fifa.Mapper.SeasonRestMapper;
 import org.example.fifa.Rest.CreateSeasonRest;
+import org.example.fifa.Rest.SeasonRest;
 import org.example.fifa.Rest.UpdateSeasonStatusRest;
 import org.example.fifa.model.Season;
-import org.example.fifa.rest.SeasonRest;
+
 import org.example.fifa.service.SeasonService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
