@@ -8,13 +8,13 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/seasons")
+@RequestMapping
 @RequiredArgsConstructor
 public class ClubStatisticsController {
 
     private final ClubStatisticsService service;
 
-    @GetMapping("/{seasonYear}/clubs/statistics")
+    @GetMapping("/clubs/statistics/{seasonYear}")
     public List<ClubStatistics> getStatistics(
             @PathVariable String seasonYear,
             @RequestParam(defaultValue = "false") boolean hasToBeClassified

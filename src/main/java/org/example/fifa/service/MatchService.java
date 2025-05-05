@@ -258,16 +258,24 @@ public class MatchService {
     }
 
     private Player findPlayer(String identifier, String clubId) throws SQLException {
-        // Essayer de trouver par ID d'abord
-        Player player = playerDao.findById(identifier);
-        if (player != null && player.getClubId().equals(clubId)) {
-            return player;
+        try {
+            // 1. Essayer de trouver par ID (texte)
+            Player player = playerDao.findById(identifier);
+            if (player != null && player.getClubId().equals(clubId)) {
+                return player;
+            }
+
+            // 2. Si échec, essayer comme numéro (uniquement si c'est un nombre)
+            try {
+                int playerNumber = Integer.parseInt(identifier);
+                return playerDao.findByNumberAndClub(playerNumber, clubId);
+            } catch (NumberFormatException e) {
+                return null; // Ni ID valide ni numéro valide
+            }
+        } catch (SQLException e) {
+            throw new SQLException("Database error while finding player", e);
         }
-
-        // Si pas trouvé, essayer par numéro
-        return playerDao.findByNumberAndClub(Integer.parseInt(identifier), clubId);
     }
-
     private void updatePlayerStatistics(String playerId, String seasonId) throws SQLException {
         PlayerStatistics stats = playerStatisticsDAO.findByPlayerIdAndSeasonId(playerId, seasonId)
                 .orElse(new PlayerStatistics(playerId, seasonId, 0, 0));
