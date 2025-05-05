@@ -2,6 +2,8 @@ package org.example.fifa.dao;
 
 import lombok.RequiredArgsConstructor;
 import org.example.fifa.model.Club;
+import org.example.fifa.model.Coach;
+import org.example.fifa.model.Goal;
 import org.example.fifa.model.Match;
 import org.springframework.stereotype.Repository;
 
@@ -161,15 +163,16 @@ public class MatchDao {
             LocalDateTime matchBeforeOrEquals) throws SQLException {
 
         StringBuilder sql = new StringBuilder("""
-        SELECT m.*, 
-               h.name as home_name, h.acronym as home_acronym,
-               a.name as away_name, a.acronym as away_acronym
-        FROM matches m
-        JOIN seasons s ON m.season_id = s.id
-        JOIN clubs h ON m.home_club_id = h.id
-        JOIN clubs a ON m.away_club_id = a.id
-        WHERE s.year = ?
-        """);
+    SELECT m.id, m.home_club_id, m.away_club_id, m.stadium, 
+           m.match_datetime, m.status, m.home_score, m.away_score, m.season_id,
+           h.id as home_id, h.name as home_name, h.acronym as home_acronym, h.stadium as home_stadium,
+           a.id as away_id, a.name as away_name, a.acronym as away_acronym
+    FROM matches m
+    LEFT JOIN seasons s ON m.season_id = s.id
+    LEFT JOIN clubs h ON m.home_club_id = h.id
+    LEFT JOIN clubs a ON m.away_club_id = a.id
+    WHERE s.year = ?
+    """);
 
         List<Object> params = new ArrayList<>();
         params.add(seasonYear);
@@ -213,10 +216,150 @@ public class MatchDao {
 
             while (rs.next()) {
                 Match match = new Match();
-                // Mapping des données comme dans les méthodes existantes
+                match.setId(rs.getString("id"));
+                match.setHomeClubId(rs.getString("home_club_id"));
+                match.setAwayClubId(rs.getString("away_club_id"));
+                match.setStadium(rs.getString("stadium"));
+                match.setMatchDatetime(rs.getTimestamp("match_datetime").toLocalDateTime());
+
+                // Gestion du statut null
+                String status = rs.getString("status");
+                match.setStatus(status != null ? Match.Status.valueOf(status) : Match.Status.NOT_STARTED);
+
+                match.setHomeScore(rs.getInt("home_score"));
+                match.setAwayScore(rs.getInt("away_score"));
+                match.setSeasonId(rs.getString("season_id"));
+
+                // Club domicile avec protection contre null
+                Club homeClub = new Club();
+                if (rs.getString("home_id") != null) {
+                    homeClub.setId(rs.getString("home_id"));
+                    homeClub.setName(rs.getString("home_name"));
+                    homeClub.setAcronym(rs.getString("home_acronym"));
+                    homeClub.setStadium(rs.getString("home_stadium"));
+                }
+                match.setClubPlayingHome(homeClub);
+
+                // Club extérieur avec protection contre null
+                Club awayClub = new Club();
+                if (rs.getString("away_id") != null) {
+                    awayClub.setId(rs.getString("away_id"));
+                    awayClub.setName(rs.getString("away_name"));
+                    awayClub.setAcronym(rs.getString("away_acronym"));
+                }
+                match.setClubPlayingAway(awayClub);
+
                 matches.add(match);
             }
         }
         return matches;
+    }
+    // Dans MatchDao.java
+    public Match findByIdWithClubs(String matchId) throws SQLException {
+        String sql = """
+        SELECT m.*, 
+               h.id as home_id, h.name as home_name, h.acronym as home_acronym, h.stadium as home_stadium,
+               h.coach_name as home_coach_name, h.coach_nationality as home_coach_nationality,
+               a.id as away_id, a.name as away_name, a.acronym as away_acronym,
+               a.coach_name as away_coach_name, a.coach_nationality as away_coach_nationality
+        FROM matches m
+        JOIN clubs h ON m.home_club_id = h.id
+        JOIN clubs a ON m.away_club_id = a.id
+        WHERE m.id = ?
+        """;
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, matchId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                Match match = new Match();
+                match.setId(rs.getString("id"));
+                match.setHomeClubId(rs.getString("home_club_id"));
+                match.setAwayClubId(rs.getString("away_club_id"));
+                match.setStadium(rs.getString("stadium"));
+                match.setMatchDatetime(rs.getTimestamp("match_datetime").toLocalDateTime());
+                match.setStatus(Match.Status.valueOf(rs.getString("status")));
+                match.setHomeScore(rs.getInt("home_score"));
+                match.setAwayScore(rs.getInt("away_score"));
+                match.setSeasonId(rs.getString("season_id"));
+
+                // Home club
+                Club homeClub = new Club();
+                homeClub.setId(rs.getString("home_id"));
+                homeClub.setName(rs.getString("home_name"));
+                homeClub.setAcronym(rs.getString("home_acronym"));
+                homeClub.setStadium(rs.getString("home_stadium"));
+                homeClub.setCoach(new Coach(
+                        rs.getString("home_coach_name"),
+                        rs.getString("home_coach_nationality")
+                ));
+                match.setClubPlayingHome(homeClub);
+
+                // Away club
+                Club awayClub = new Club();
+                awayClub.setId(rs.getString("away_id"));
+                awayClub.setName(rs.getString("away_name"));
+                awayClub.setAcronym(rs.getString("away_acronym"));
+                awayClub.setCoach(new Coach(
+                        rs.getString("away_coach_name"),
+                        rs.getString("away_coach_nationality")
+                ));
+                match.setClubPlayingAway(awayClub);
+
+                return match;
+            }
+            return null;
+        }
+    }
+    // Dans MatchDao.java
+    public void updateMatchWithGoals(Match match) throws SQLException {
+        // Mettre à jour le score du match
+        String updateMatchSql = """
+        UPDATE matches 
+        SET home_score = ?, away_score = ?
+        WHERE id = ?
+        """;
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(updateMatchSql)) {
+            stmt.setInt(1, match.getHomeScore());
+            stmt.setInt(2, match.getAwayScore());
+            stmt.setString(3, match.getId());
+            stmt.executeUpdate();
+        }
+
+        // Sauvegarder les buts
+        String insertGoalSql = """
+        INSERT INTO goal (match_id, club_id, player_id, minute_of_goal, own_goal)
+        VALUES (?, ?, ?, ?, ?)
+        """;
+
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(insertGoalSql)) {
+
+            // Sauvegarder les buts à domicile
+            for (Goal goal : match.getHomeGoals()) {
+                stmt.setString(1, match.getId());
+                stmt.setString(2, match.getHomeClubId());
+                stmt.setString(3, goal.getScorer().getId());
+                stmt.setInt(4, goal.getMinuteOfGoal());
+                stmt.setBoolean(5, goal.isOwnGoal());
+                stmt.addBatch();
+            }
+
+            // Sauvegarder les buts à l'extérieur
+            for (Goal goal : match.getAwayGoals()) {
+                stmt.setString(1, match.getId());
+                stmt.setString(2, match.getAwayClubId());
+                stmt.setString(3, goal.getScorer().getId());
+                stmt.setInt(4, goal.getMinuteOfGoal());
+                stmt.setBoolean(5, goal.isOwnGoal());
+                stmt.addBatch();
+            }
+
+            stmt.executeBatch();
+        }
     }
 }

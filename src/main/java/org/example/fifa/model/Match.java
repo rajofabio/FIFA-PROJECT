@@ -31,6 +31,6 @@ public class Match {
     private List<Goal> awayGoals;
 
     public enum Status {
-        NOT_STARTED, ONGOING, FINISHED
+        NOT_STARTED, STARTED, FINISHED
     }
 }

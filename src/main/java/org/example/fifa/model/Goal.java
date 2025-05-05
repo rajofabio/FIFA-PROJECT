@@ -17,3 +17,4 @@ public class Goal {
     private boolean ownGoal;
 
 }
+    

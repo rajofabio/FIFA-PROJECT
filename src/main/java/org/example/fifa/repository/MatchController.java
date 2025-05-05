@@ -1,6 +1,8 @@
 package org.example.fifa.repository;
 
 import org.example.fifa.Rest.MatchRest;
+import org.example.fifa.model.GoalRequest;
+import org.example.fifa.model.Match;
 import org.example.fifa.service.MatchService;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 
 @RestController
@@ -56,6 +59,55 @@ public class MatchController {
             return ResponseEntity.notFound().build();
         } catch (SQLException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    @PutMapping("/matches/{id}/status")
+    public ResponseEntity<?> updateMatchStatus(
+            @PathVariable String id,
+            @RequestBody Map<String, String> requestBody) {
+
+        try {
+            String statusStr = requestBody.get("status");
+            if (statusStr == null) {
+                return ResponseEntity.badRequest().body("Status is required");
+            }
+
+            Match.Status newStatus;
+            try {
+                newStatus = Match.Status.valueOf(statusStr);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body("Invalid status value");
+            }
+
+            MatchRest updatedMatch = matchService.updateMatchStatus(id, newStatus);
+            return ResponseEntity.ok(updatedMatch);
+
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error updating match status");
+        }
+
+
+    }
+
+    @PostMapping("/matches/{id}/goals")
+    public ResponseEntity<?> addGoalsToMatch(
+            @PathVariable String id,
+            @RequestBody List<GoalRequest> goalRequests) {
+
+        try {
+            MatchRest updatedMatch = matchService.addGoalsToMatch(id, goalRequests);
+            return ResponseEntity.ok(updatedMatch);
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.notFound().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error adding goals to match");
         }
     }
 }

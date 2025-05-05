@@ -56,19 +56,7 @@ public class PlayerDao {
         return players;
     }
 
-    public Player findById(String id) throws SQLException {
-        String sql = "SELECT * FROM players WHERE id = ?";
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setString(1, id);
-            try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    return mapResultSetToPlayer(rs);
-                }
-            }
-        }
-        return null;
-    }
+
 
     public void update(Player player) throws SQLException {
         String sql = "UPDATE players SET name = ?, number = ?, position = ?, nationality = ?, age = ?, club_id = ? WHERE id = ?";
@@ -114,5 +102,44 @@ public class PlayerDao {
         player.setAge(rs.getInt("age"));
         player.setClubId(rs.getString("club_id"));
         return player;
+    }
+    // Dans PlayerDao.java
+    public Player findById(String playerId) throws SQLException {
+        String sql = "SELECT * FROM players WHERE id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, playerId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return Player.builder()
+                        .id(rs.getString("id"))
+                        .name(rs.getString("name"))
+                        .number(rs.getInt("number"))
+                        .clubId(rs.getString("club_id"))
+                        .build();
+            }
+            return null;
+        }
+    }
+
+    public Player findByNumberAndClub(int number, String clubId) throws SQLException {
+        String sql = "SELECT * FROM players WHERE number = ? AND club_id = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, number);
+            stmt.setString(2, clubId);
+            ResultSet rs = stmt.executeQuery();
+
+            if (rs.next()) {
+                return Player.builder()
+                        .id(rs.getString("id"))
+                        .name(rs.getString("name"))
+                        .number(rs.getInt("number"))
+                        .clubId(rs.getString("club_id"))
+                        .build();
+            }
+            return null;
+        }
     }
 }
