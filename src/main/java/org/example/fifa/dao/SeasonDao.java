@@ -87,4 +87,25 @@ public class SeasonDao {
             stmt.executeUpdate();
         }
     }
+
+
+    public Season findByYear(int year) throws SQLException {
+        String sql = "SELECT * FROM seasons WHERE year = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, year);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                Season season = new Season();
+                season.setId(rs.getString("id"));
+                season.setYear(rs.getInt("year"));
+                season.setStatus(Season.Status.valueOf(rs.getString("status")));
+                season.setChampionshipId(rs.getString("championship_id"));
+                return season;
+            }
+            return null;
+        }
+
+
+    }
 }

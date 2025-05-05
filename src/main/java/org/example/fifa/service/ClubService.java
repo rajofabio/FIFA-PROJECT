@@ -24,8 +24,8 @@ public class ClubService {
     public void save(Club club) throws SQLException {
         clubDao.save(club);
     }
-    public void update(Club club) throws SQLException {
-        clubDao.update(club);
+    public Club upsert(Club club) throws SQLException {
+        return (Club) clubDao.upsert(club);
     }
 
 }

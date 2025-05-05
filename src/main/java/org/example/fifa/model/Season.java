@@ -14,6 +14,7 @@ public class Season {
     private int year;
     private String alias;
     private Status status = Status.NOT_STARTED;
+    private String championshipId;
 
 
     public enum Status {
