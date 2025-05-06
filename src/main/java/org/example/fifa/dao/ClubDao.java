@@ -148,9 +148,9 @@ public class ClubDao {
     }
     public Object upsert(Club club) throws SQLException {
         if (existsById(club.getId())) {
-            return update(club);  // Retourne le club mis à jour
+            return update(club);
         } else {
-            return insert(club);  // Retourne le nouveau club
+            return insert(club);
         }
     }
 

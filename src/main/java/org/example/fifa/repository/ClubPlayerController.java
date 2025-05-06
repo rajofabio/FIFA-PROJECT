@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -44,14 +45,28 @@ public class ClubPlayerController {
     }
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public List<PlayerRest> addPlayersToClub(@PathVariable String clubId, @RequestBody List<Player> players) {
+    public List<PlayerRest> addPlayersToClub(@PathVariable String clubId, @RequestBody List<PlayerRest> playersRest)  {
         try {
-            List<Player> added = playerService.addPlayersToClub(clubId, players);
+
+            List<Player> players = new ArrayList<>();
+            for (PlayerRest rest : playersRest) {
+                Player player = Player.builder()
+                        .id(rest.getId())
+                        .name(rest.getName())
+                        .number(rest.getNumber())
+                        .position(Player.Position.valueOf(rest.getPosition()))
+                        .nationality(rest.getNationality())
+                        .age(rest.getAge())
+                        .build();
+                players.add(player);
+            }
+
+            List<Player> added = playerService.addPlayersToClub( clubId, players);
             return playerRestMapper.toRestList(added);
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (SQLException e) {
-            throw new RuntimeException("Error adding players to club", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 

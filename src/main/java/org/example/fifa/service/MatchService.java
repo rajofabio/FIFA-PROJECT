@@ -2,7 +2,6 @@ package org.example.fifa.service;
 
 import org.example.fifa.Mapper.MatchRestMapper;
 import org.example.fifa.Rest.MatchRest;
-import org.example.fifa.Rest.PlayerStatisticsRest;
 import org.example.fifa.dao.*;
 import org.example.fifa.model.*;
 import org.springframework.stereotype.Service;
@@ -35,7 +34,6 @@ public class MatchService {
     }
 
     public List<MatchRest> generateSeasonMatches(String seasonYear) throws SQLException {
-        // Validation
         int year;
         try {
             year = Integer.parseInt(seasonYear);
@@ -56,13 +54,13 @@ public class MatchService {
             throw new IllegalArgumentException("Matches already generated for this season");
         }
 
-        // Get clubs
+
         List<Club> clubs = clubDao.findByChampionshipId(season.getChampionshipId());
         if (clubs.size() < 2) {
             throw new IllegalArgumentException("At least 2 clubs required");
         }
 
-        // Generate matches (only home matches as requested)
+
         List<Match> matches = new ArrayList<>();
         LocalDateTime matchDate = LocalDateTime.now().plusDays(7); // Start in 1 week
 
@@ -71,7 +69,7 @@ public class MatchService {
                 Club home = clubs.get(i);
                 Club away = clubs.get(j);
 
-                // Create only home match
+
                 Match match = new Match();
                 match.setId(UUID.randomUUID().toString());
                 match.setHomeClubId(home.getId());
@@ -86,14 +84,14 @@ public class MatchService {
                 match.setClubPlayingAway(away);
 
                 matches.add(match);
-                matchDate = matchDate.plusDays(7); // Space matches by 1 week
+                matchDate = matchDate.plusDays(7);
             }
         }
 
-        // Save to database
+
         matchDao.saveAll(matches);
 
-        // Return formatted response
+
         return matchRestMapper.toRestList(matches);
     }
 
@@ -104,15 +102,14 @@ public class MatchService {
             LocalDateTime matchAfter,
             LocalDateTime matchBeforeOrEquals) throws NoSuchElementException, SQLException {
 
-        // Validation de l'année
         int year;
         try {
             year = Integer.parseInt(seasonYear);
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Invalid season year format");
+            throw new IllegalArgumentException();
         }
 
-        // Récupération des matchs avec filtres
+
         List<Match> matches = matchDao.findBySeasonWithFilters(
                 year,
                 matchStatus,
@@ -122,59 +119,51 @@ public class MatchService {
         );
 
         if (matches.isEmpty()) {
-            throw new NoSuchElementException("No matches found for season " + seasonYear);
+            throw new NoSuchElementException();
         }
 
         return matchRestMapper.toRestList(matches);
     }
 
-    // Dans MatchService.java
     public MatchRest updateMatchStatus(String matchId, Match.Status newStatus) throws SQLException {
-        // Récupérer le match
         Match match = matchDao.findByIdWithClubs(matchId);
         if (match == null) {
-            throw new NoSuchElementException("Match not found");
+            throw new NoSuchElementException();
         }
 
-        // Vérifier la transition de statut valide
         if (!isValidStatusTransition(match.getStatus(), newStatus)) {
-            throw new IllegalArgumentException("Invalid status transition");
+            throw new IllegalArgumentException();
         }
 
-        // Mettre à jour le statut
         match.setStatus(newStatus);
 
-        // Si le nouveau statut est FINISHED, mettre à jour les statistiques des clubs
         if (newStatus == Match.Status.FINISHED) {
             updateClubStatistics(match);
         }
 
-        // Sauvegarder les modifications
         matchDao.update(match);
 
         return matchRestMapper.toRest(match);
     }
 
     private boolean isValidStatusTransition(Match.Status currentStatus, Match.Status newStatus) {
-        // Transition valide seulement dans l'ordre: NOT_STARTED -> STARTED -> FINISHED
         return (currentStatus == Match.Status.NOT_STARTED && newStatus == Match.Status.STARTED) ||
                 (currentStatus == Match.Status.STARTED && newStatus == Match.Status.FINISHED) ||
-                currentStatus == newStatus; // Permet de réassigner le même statut
+                currentStatus == newStatus;
     }
 
     private void updateClubStatistics(Match match) throws SQLException {
-        // Récupérer la saison pour avoir l'année
         Season season = seasonDao.findById(match.getSeasonId());
         if (season == null) {
-            throw new IllegalStateException("Season not found for match");
+            throw new IllegalStateException();
         }
         String seasonYear = String.valueOf(season.getYear());
 
-        // Récupérer les statistiques des clubs pour la saison
+
         ClubStatistics homeStats = clubStatisticsDao.findByClubAndSeason(match.getHomeClubId(), seasonYear);
         ClubStatistics awayStats = clubStatisticsDao.findByClubAndSeason(match.getAwayClubId(), seasonYear);
 
-        // Mettre à jour les buts marqués et encaissés
+
         homeStats.setScoredGoals(homeStats.getScoredGoals() + match.getHomeScore());
         homeStats.setConcededGoals(homeStats.getConcededGoals() + match.getAwayScore());
         homeStats.setDifferenceGoals(homeStats.getScoredGoals() - homeStats.getConcededGoals());
@@ -183,7 +172,6 @@ public class MatchService {
         awayStats.setConcededGoals(awayStats.getConcededGoals() + match.getHomeScore());
         awayStats.setDifferenceGoals(awayStats.getScoredGoals() - awayStats.getConcededGoals());
 
-        // Mettre à jour les clean sheets
         if (match.getAwayScore() == 0) {
             homeStats.setCleanSheetNumber(homeStats.getCleanSheetNumber() + 1);
         }
@@ -191,37 +179,33 @@ public class MatchService {
             awayStats.setCleanSheetNumber(awayStats.getCleanSheetNumber() + 1);
         }
 
-        // Déterminer le résultat et mettre à jour les points
+
         if (match.getHomeScore() > match.getAwayScore()) {
-            // Victoire à domicile
             homeStats.setRankingPoints(homeStats.getRankingPoints() + 3);
         } else if (match.getHomeScore() < match.getAwayScore()) {
-            // Victoire à l'extérieur
             awayStats.setRankingPoints(awayStats.getRankingPoints() + 3);
         } else {
-            // Match nul
             homeStats.setRankingPoints(homeStats.getRankingPoints() + 1);
             awayStats.setRankingPoints(awayStats.getRankingPoints() + 1);
         }
 
-        // Sauvegarder les statistiques mises à jour
+
         clubStatisticsDao.save(homeStats, seasonYear);
         clubStatisticsDao.save(awayStats, seasonYear);
     }
 
     public MatchRest addGoalsToMatch(String matchId, List<GoalRequest> goalRequests) throws SQLException {
-        // Récupérer le match avec tous les détails nécessaires
         Match match = matchDao.findByIdWithClubs(matchId);
         if (match == null) {
-            throw new NoSuchElementException("Match not found");
+            throw new NoSuchElementException();
         }
 
-        // Vérifier que le match est STARTED
+
         if (match.getStatus() != Match.Status.STARTED) {
-            throw new IllegalArgumentException("Goals can only be added to matches with STARTED status");
+            throw new IllegalArgumentException();
         }
 
-        // Initialiser les listes de buts si elles sont null
+
         if (match.getHomeGoals() == null) {
             match.setHomeGoals(new ArrayList<>());
         }
@@ -229,15 +213,12 @@ public class MatchService {
             match.setAwayGoals(new ArrayList<>());
         }
 
-        // Traiter chaque but
         for (GoalRequest goalRequest : goalRequests) {
-            // Trouver le joueur
             Player player = findPlayer(goalRequest.getScorerIdentifier(), goalRequest.getClubId());
             if (player == null) {
-                throw new NoSuchElementException("Player not found: " + goalRequest.getScorerIdentifier());
+                throw new NoSuchElementException();
             }
 
-            // Créer le but
             Goal goal = Goal.builder()
                     .clubId(goalRequest.getClubId())
                     .scorer(player)
@@ -246,13 +227,12 @@ public class MatchService {
                     .build();
             goal.setMatchId(matchId);
 
-            // Déterminer si c'est un but normal ou un CSC
             boolean isOwnGoal = goalRequest.isOwnGoal();
             String scoringClubId = isOwnGoal ?
                     (goalRequest.getClubId().equals(match.getHomeClubId()) ? match.getAwayClubId() : match.getHomeClubId())
                     : goalRequest.getClubId();
 
-            // Ajouter le but à la bonne équipe et mettre à jour le score
+
             if (scoringClubId.equals(match.getHomeClubId())) {
                 match.getHomeGoals().add(goal);
                 match.setHomeScore(match.getHomeScore() + 1);
@@ -261,42 +241,34 @@ public class MatchService {
                 match.setAwayScore(match.getAwayScore() + 1);
             }
 
-            // Mettre à jour les statistiques du joueur (uniquement si ce n'est pas un CSC)
             if (!isOwnGoal) {
                 updatePlayerStatistics(player.getId(), match.getSeasonId());
             }
         }
 
-        // Sauvegarder les modifications
+
         matchDao.updateMatchWithGoals(match);
 
         return matchRestMapper.toRest(match);
     }
     private Player findPlayer(String identifier, String clubId) throws SQLException {
-        // 1. Essayer de trouver par ID
         Player player = playerDao.findById(identifier);
         if (player != null && player.getClubId().equals(clubId)) {
             return player;
         }
-
-        // 2. Si échec, essayer comme numéro (uniquement si c'est un nombre)
         try {
             int playerNumber = Integer.parseInt(identifier);
             return playerDao.findByNumberAndClub(playerNumber, clubId);
         } catch (NumberFormatException e) {
-            return null; // Ni ID valide ni numéro valide
+            return null;
         }
     }
     private void updatePlayerStatistics(String playerId, String seasonId) throws SQLException {
-        // Trouver ou créer les statistiques du joueur
         PlayerStatistics stats = playerStatisticsDAO
                 .findByPlayerIdAndSeasonId(playerId, seasonId)
                 .orElse(new PlayerStatistics(playerId, seasonId, 0, 0));
 
-        // Incrémenter le nombre de buts
         stats.setScoredGoals(stats.getScoredGoals() + 1);
-
-        // Sauvegarder
         playerStatisticsDAO.save(stats);
     }
 

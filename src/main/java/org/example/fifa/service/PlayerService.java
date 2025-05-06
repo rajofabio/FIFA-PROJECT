@@ -1,7 +1,6 @@
 package org.example.fifa.service;
 
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import org.example.fifa.Mapper.PlayerRestMapper;
 import org.example.fifa.Rest.PlayerRest;
 import org.example.fifa.dao.ClubDao;
@@ -41,7 +40,7 @@ public class PlayerService {
                         Club club = p.getClubId() != null ? clubDao.findById(p.getClubId()) : null;
                         return club != null && club.getName().toLowerCase().contains(clubName.toLowerCase());
                     } catch (SQLException e) {
-                        throw new RuntimeException("Erreur lors de la récupération du club", e);
+                        throw new RuntimeException();
                     }
                 })
                 .map(p -> {
@@ -49,7 +48,7 @@ public class PlayerService {
                         Club club = p.getClubId() != null ? clubDao.findById(p.getClubId()) : null;
                         return playerRestMapper.toRest(p, club);
                     } catch (SQLException e) {
-                        throw new RuntimeException("Erreur lors de la transformation du joueur", e);
+                        throw new RuntimeException();
                     }
                 })
                 .collect(Collectors.toList());
@@ -58,7 +57,7 @@ public class PlayerService {
         return playerDao.findByClubId(clubId);
     }public List<Player> replacePlayersOfClub(String clubId, List<Player> players) throws SQLException {
         if (clubId == null || players == null) {
-            throw new IllegalArgumentException("Club ID or player list is null");
+            throw new IllegalArgumentException();
         }
 
         playerDao.detachPlayersFromClub(clubId);
@@ -78,20 +77,36 @@ public class PlayerService {
         List<Player> result = new ArrayList<>();
 
         for (Player input : players) {
-            Player existing = playerDao.findById(input.getId());
+            Player existing = null;
 
-            if (existing == null) {
-                input.setClubId(clubId);
-                playerDao.save(input);
-                result.add(input);
-            } else {
+
+            if (input.getId() != null && !input.getId().trim().isEmpty()) {
+                existing = playerDao.findById(input.getId());
+            }
+
+            if (existing != null) {
+
                 if (existing.getClubId() != null) {
+
                     throw new IllegalArgumentException("Player " + existing.getId() + " is already in a club");
                 } else {
+
                     existing.setClubId(clubId);
                     playerDao.updateClubOnly(existing);
                     result.add(existing);
                 }
+            } else {
+
+                if (input.getNationality() == null) {
+                    throw new IllegalArgumentException();
+                }
+                if (input.getPosition() == null) {
+                    throw new IllegalArgumentException();
+                }
+
+                input.setClubId(clubId);
+                playerDao.save(input);
+                result.add(input);
             }
         }
 

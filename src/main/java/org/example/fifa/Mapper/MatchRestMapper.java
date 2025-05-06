@@ -58,9 +58,7 @@ public class MatchRestMapper {
         match.setMatchDatetime(matchRest.getMatchDatetime());
         match.setStatus(Match.Status.valueOf(matchRest.getActualStatus()));
 
-        // On ne convertit pas les joueurs buteurs (Scorers) ici, car ce serait fait ailleurs dans la logique métier
 
-        // Conversion minimale des clubs (sans liste de buteurs ni score)
         match.setClubPlayingHome(new Club(matchRest.getClubPlayingHome().getId(), matchRest.getClubPlayingHome().getName(), matchRest.getClubPlayingHome().getAcronym()));
         match.setClubPlayingAway(new Club(matchRest.getClubPlayingAway().getId(), matchRest.getClubPlayingAway().getName(), matchRest.getClubPlayingAway().getAcronym()));
 

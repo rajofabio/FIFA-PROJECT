@@ -35,7 +35,8 @@ public class ClubRestMapper {
                 rest.getYearCreation(),
                 rest.getStadium(),
                 coach,
-                null 
+                null
         );
     }
+
 }
