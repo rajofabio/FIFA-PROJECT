@@ -1,6 +1,7 @@
 package org.example.fifa.Mapper;
 
 import org.example.fifa.Rest.*;
+import org.example.fifa.model.Club;
 import org.example.fifa.model.Match;
 import org.springframework.stereotype.Component;
 
@@ -50,4 +51,20 @@ public class MatchRestMapper {
         scorer.setOwnGoal(true);
         return Collections.singletonList(scorer);
     }
+    public Match toDomain(MatchRest matchRest) {
+        Match match = new Match();
+        match.setId(matchRest.getId());
+        match.setStadium(matchRest.getStadium());
+        match.setMatchDatetime(matchRest.getMatchDatetime());
+        match.setStatus(Match.Status.valueOf(matchRest.getActualStatus()));
+
+        // On ne convertit pas les joueurs buteurs (Scorers) ici, car ce serait fait ailleurs dans la logique métier
+
+        // Conversion minimale des clubs (sans liste de buteurs ni score)
+        match.setClubPlayingHome(new Club(matchRest.getClubPlayingHome().getId(), matchRest.getClubPlayingHome().getName(), matchRest.getClubPlayingHome().getAcronym()));
+        match.setClubPlayingAway(new Club(matchRest.getClubPlayingAway().getId(), matchRest.getClubPlayingAway().getName(), matchRest.getClubPlayingAway().getAcronym()));
+
+        return match;
+    }
+
 }

@@ -22,8 +22,9 @@ public class MatchService {
     private final PlayerDao playerDao;
     private final PlayerStatisticsDAO playerStatisticsDAO;
 
+
     public MatchService(SeasonDao seasonDao, ClubDao clubDao,
-                        MatchDao matchDao, MatchRestMapper matchRestMapper , ClubStatisticsDao clubStatisticsDao , PlayerDao playerDao ,  PlayerStatisticsDAO playerStatisticsDAO)  {
+                        MatchDao matchDao, MatchRestMapper matchRestMapper, ClubStatisticsDao clubStatisticsDao, PlayerDao playerDao, PlayerStatisticsDAO playerStatisticsDAO) {
         this.seasonDao = seasonDao;
         this.clubDao = clubDao;
         this.matchDao = matchDao;
@@ -126,6 +127,7 @@ public class MatchService {
 
         return matchRestMapper.toRestList(matches);
     }
+
     // Dans MatchService.java
     public MatchRest updateMatchStatus(String matchId, Match.Status newStatus) throws SQLException {
         // Récupérer le match
@@ -206,9 +208,9 @@ public class MatchService {
         clubStatisticsDao.save(homeStats, seasonYear);
         clubStatisticsDao.save(awayStats, seasonYear);
     }
-    // Dans MatchService.java
+
     public MatchRest addGoalsToMatch(String matchId, List<GoalRequest> goalRequests) throws SQLException {
-        // Récupérer le match
+        // Récupérer le match avec tous les détails nécessaires
         Match match = matchDao.findByIdWithClubs(matchId);
         if (match == null) {
             throw new NoSuchElementException("Match not found");
@@ -219,9 +221,17 @@ public class MatchService {
             throw new IllegalArgumentException("Goals can only be added to matches with STARTED status");
         }
 
+        // Initialiser les listes de buts si elles sont null
+        if (match.getHomeGoals() == null) {
+            match.setHomeGoals(new ArrayList<>());
+        }
+        if (match.getAwayGoals() == null) {
+            match.setAwayGoals(new ArrayList<>());
+        }
+
         // Traiter chaque but
         for (GoalRequest goalRequest : goalRequests) {
-            // Trouver le joueur (par ID ou numéro)
+            // Trouver le joueur
             Player player = findPlayer(goalRequest.getScorerIdentifier(), goalRequest.getClubId());
             if (player == null) {
                 throw new NoSuchElementException("Player not found: " + goalRequest.getScorerIdentifier());
@@ -229,26 +239,32 @@ public class MatchService {
 
             // Créer le but
             Goal goal = Goal.builder()
-                    .matchId(matchId)
                     .clubId(goalRequest.getClubId())
                     .scorer(player)
                     .minuteOfGoal(goalRequest.getMinuteOfGoal())
-                    .ownGoal(false) // Par défaut, pas un but contre son camp
+                    .ownGoal(goalRequest.isOwnGoal())
                     .build();
+            goal.setMatchId(matchId);
 
-            // Ajouter le but au match
-            if (goalRequest.getClubId().equals(match.getHomeClubId())) {
+            // Déterminer si c'est un but normal ou un CSC
+            boolean isOwnGoal = goalRequest.isOwnGoal();
+            String scoringClubId = isOwnGoal ?
+                    (goalRequest.getClubId().equals(match.getHomeClubId()) ? match.getAwayClubId() : match.getHomeClubId())
+                    : goalRequest.getClubId();
+
+            // Ajouter le but à la bonne équipe et mettre à jour le score
+            if (scoringClubId.equals(match.getHomeClubId())) {
                 match.getHomeGoals().add(goal);
                 match.setHomeScore(match.getHomeScore() + 1);
-            } else if (goalRequest.getClubId().equals(match.getAwayClubId())) {
+            } else {
                 match.getAwayGoals().add(goal);
                 match.setAwayScore(match.getAwayScore() + 1);
-            } else {
-                throw new IllegalArgumentException("Club ID doesn't match either home or away team");
             }
 
-            // Mettre à jour les statistiques du joueur
-            updatePlayerStatistics(player.getId(), match.getSeasonId());
+            // Mettre à jour les statistiques du joueur (uniquement si ce n'est pas un CSC)
+            if (!isOwnGoal) {
+                updatePlayerStatistics(player.getId(), match.getSeasonId());
+            }
         }
 
         // Sauvegarder les modifications
@@ -256,31 +272,32 @@ public class MatchService {
 
         return matchRestMapper.toRest(match);
     }
-
     private Player findPlayer(String identifier, String clubId) throws SQLException {
-        try {
-            // 1. Essayer de trouver par ID (texte)
-            Player player = playerDao.findById(identifier);
-            if (player != null && player.getClubId().equals(clubId)) {
-                return player;
-            }
+        // 1. Essayer de trouver par ID
+        Player player = playerDao.findById(identifier);
+        if (player != null && player.getClubId().equals(clubId)) {
+            return player;
+        }
 
-            // 2. Si échec, essayer comme numéro (uniquement si c'est un nombre)
-            try {
-                int playerNumber = Integer.parseInt(identifier);
-                return playerDao.findByNumberAndClub(playerNumber, clubId);
-            } catch (NumberFormatException e) {
-                return null; // Ni ID valide ni numéro valide
-            }
-        } catch (SQLException e) {
-            throw new SQLException("Database error while finding player", e);
+        // 2. Si échec, essayer comme numéro (uniquement si c'est un nombre)
+        try {
+            int playerNumber = Integer.parseInt(identifier);
+            return playerDao.findByNumberAndClub(playerNumber, clubId);
+        } catch (NumberFormatException e) {
+            return null; // Ni ID valide ni numéro valide
         }
     }
     private void updatePlayerStatistics(String playerId, String seasonId) throws SQLException {
-        PlayerStatistics stats = playerStatisticsDAO.findByPlayerIdAndSeasonId(playerId, seasonId)
+        // Trouver ou créer les statistiques du joueur
+        PlayerStatistics stats = playerStatisticsDAO
+                .findByPlayerIdAndSeasonId(playerId, seasonId)
                 .orElse(new PlayerStatistics(playerId, seasonId, 0, 0));
 
+        // Incrémenter le nombre de buts
         stats.setScoredGoals(stats.getScoredGoals() + 1);
+
+        // Sauvegarder
         playerStatisticsDAO.save(stats);
     }
+
 }

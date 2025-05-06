@@ -8,4 +8,5 @@ public class GoalRequest {
     private String clubId;
     private String scorerIdentifier;
     private int minuteOfGoal;
+    private boolean ownGoal;
 }

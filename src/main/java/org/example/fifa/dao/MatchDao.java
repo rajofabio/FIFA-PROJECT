@@ -17,7 +17,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MatchDao {
     private final DataSource dataSource;
-
+    private final GoalDao goalDao;
 
 
     public void saveAll(List<Match> matches) throws SQLException {
@@ -254,19 +254,18 @@ public class MatchDao {
         }
         return matches;
     }
-    // Dans MatchDao.java
     public Match findByIdWithClubs(String matchId) throws SQLException {
         String sql = """
-        SELECT m.*, 
-               h.id as home_id, h.name as home_name, h.acronym as home_acronym, h.stadium as home_stadium,
-               h.coach_name as home_coach_name, h.coach_nationality as home_coach_nationality,
-               a.id as away_id, a.name as away_name, a.acronym as away_acronym,
-               a.coach_name as away_coach_name, a.coach_nationality as away_coach_nationality
-        FROM matches m
-        JOIN clubs h ON m.home_club_id = h.id
-        JOIN clubs a ON m.away_club_id = a.id
-        WHERE m.id = ?
-        """;
+    SELECT m.*, 
+           h.id as home_id, h.name as home_name, h.acronym as home_acronym, h.stadium as home_stadium,
+           h.coach_name as home_coach_name, h.coach_nationality as home_coach_nationality,
+           a.id as away_id, a.name as away_name, a.acronym as away_acronym,
+           a.coach_name as away_coach_name, a.coach_nationality as away_coach_nationality
+    FROM matches m
+    JOIN clubs h ON m.home_club_id = h.id
+    JOIN clubs a ON m.away_club_id = a.id
+    WHERE m.id = ?
+    """;
 
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
@@ -280,10 +279,26 @@ public class MatchDao {
                 match.setAwayClubId(rs.getString("away_club_id"));
                 match.setStadium(rs.getString("stadium"));
                 match.setMatchDatetime(rs.getTimestamp("match_datetime").toLocalDateTime());
-                match.setStatus(Match.Status.valueOf(rs.getString("status")));
+
+                // Gestion robuste du statut
+                String statusStr = rs.getString("status");
+                Match.Status status;
+                try {
+                    status = Match.Status.valueOf(statusStr);
+                } catch (IllegalArgumentException e) {
+                    status = Match.Status.NOT_STARTED;
+                }
+                match.setStatus(status);
+
                 match.setHomeScore(rs.getInt("home_score"));
                 match.setAwayScore(rs.getInt("away_score"));
                 match.setSeasonId(rs.getString("season_id"));
+
+                // Récupérer les buts existants
+                List<Goal> homeGoals = goalDao.findByMatchIdAndClubId(matchId, match.getHomeClubId());
+                List<Goal> awayGoals = goalDao.findByMatchIdAndClubId(matchId, match.getAwayClubId());
+                match.setHomeGoals(homeGoals);
+                match.setAwayGoals(awayGoals);
 
                 // Home club
                 Club homeClub = new Club();

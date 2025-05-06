@@ -94,20 +94,29 @@ public class MatchController {
 
     }
 
-    @PostMapping("/matches/{id}/goals")
-    public ResponseEntity<?> addGoalsToMatch(
-            @PathVariable String id,
-            @RequestBody List<GoalRequest> goalRequests) {
+    @RestController
+    @RequestMapping("/matches/{matchId}/goals")
+    public class MatchGoalsController {
+        private final MatchService matchService;
 
-        try {
-            MatchRest updatedMatch = matchService.addGoalsToMatch(id, goalRequests);
-            return ResponseEntity.ok(updatedMatch);
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.notFound().build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error adding goals to match");
+        public MatchGoalsController(MatchService matchService) {
+            this.matchService = matchService;
+        }
+
+        @PostMapping
+        public ResponseEntity<?> addGoalsToMatch(
+                @PathVariable String matchId,
+                @RequestBody List<GoalRequest> goalRequests) {
+            try {
+                MatchRest matchRest = matchService.addGoalsToMatch(matchId, goalRequests);
+                return ResponseEntity.ok(matchRest);
+            } catch (NoSuchElementException e) {
+                return ResponseEntity.notFound().build();
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body(e.getMessage());
+            } catch (SQLException e) {
+                return ResponseEntity.internalServerError().body("Database error");
+            }
         }
     }
 }

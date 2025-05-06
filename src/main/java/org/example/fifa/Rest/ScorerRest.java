@@ -6,12 +6,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
-public class PlayerScorerRest {
-    private String id;
-    private String name;
-    private int number;
-
-
+@NoArgsConstructor
+@Builder
+public class ScorerRest {
+    private PlayerScorerRest playerScorerRest;
+    private int minuteOfGoal;
+    private boolean ownGoal;
 }

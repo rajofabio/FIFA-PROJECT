@@ -74,11 +74,14 @@ public class PlayerDao {
     }
 
     public void updateClubOnly(Player player) throws SQLException {
-        String sql = "UPDATE players SET club_id = ? WHERE id = ?";
+        String sql = "UPDATE players SET club_id = ?, position = ?, nationality = ?, age = ? WHERE id = ?";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, player.getClubId());
-            stmt.setString(2, player.getId());
+            stmt.setString(2, String.valueOf(player.getPosition()));
+            stmt.setString(3, player.getNationality());
+            stmt.setInt(4, player.getAge());
+            stmt.setString(5, player.getId());
             stmt.executeUpdate();
         }
     }

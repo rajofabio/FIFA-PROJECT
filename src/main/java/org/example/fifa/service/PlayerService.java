@@ -98,8 +98,4 @@ public class PlayerService {
         return result;
     }
 
-
-    public void updatePlayer(Player player) throws SQLException {
-        playerDao.update(player);
-    }
 }

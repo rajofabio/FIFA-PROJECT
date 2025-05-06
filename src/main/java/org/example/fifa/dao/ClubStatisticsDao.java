@@ -82,7 +82,7 @@ public class ClubStatisticsDao {
         }
         return results;
     }
-    // Dans ClubStatisticsDao.java
+
     public ClubStatistics findByClubAndSeason(String clubId, String seasonYear) {
         String query = """
         SELECT c.id, c.name, c.acronym, c.year_creation, c.stadium,
