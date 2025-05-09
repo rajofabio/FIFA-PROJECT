@@ -13,30 +13,30 @@ import java.util.Optional;
 public class PlayerStatisticsDAO {
     private final DataSource dataSource;
 
-    public Optional<PlayerStatistics> findByPlayerIdAndSeasonId(String playerId, String seasonId) throws SQLException {
+    public Optional<PlayerStatistics> findByPlayerIdAndSeasonYear(String playerId, String seasonYear) throws SQLException {
         String query = """
-            SELECT scored_goals, playing_time FROM player_statistics
-            WHERE player_id = ? AND season_id = ?
-        """;
+        SELECT ps.player_id, ps.season_id, ps.scored_goals, ps.playing_time 
+        FROM player_statistics ps
+        JOIN seasons s ON ps.season_id = s.id
+        WHERE ps.player_id = ? AND s.year = ?
+    """;
 
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
             stmt.setString(1, playerId);
-            stmt.setString(2, seasonId);
+            stmt.setInt(2, Integer.parseInt(seasonYear)); // Conversion de l'année
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 return Optional.of(new PlayerStatistics(
-                        playerId,
-                        seasonId,
+                        rs.getString("player_id"),
+                        rs.getString("season_id"),
                         rs.getInt("scored_goals"),
                         rs.getInt("playing_time")
                 ));
-            } else {
-                return Optional.empty();
             }
+            return Optional.empty();
         }
     }
-
     public void save(PlayerStatistics stats) throws SQLException {
         String insert = """
             INSERT INTO player_statistics (player_id, season_id, scored_goals, playing_time)

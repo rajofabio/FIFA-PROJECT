@@ -265,7 +265,7 @@ public class MatchService {
     }
     private void updatePlayerStatistics(String playerId, String seasonId) throws SQLException {
         PlayerStatistics stats = playerStatisticsDAO
-                .findByPlayerIdAndSeasonId(playerId, seasonId)
+                .findByPlayerIdAndSeasonYear(playerId, seasonId)
                 .orElse(new PlayerStatistics(playerId, seasonId, 0, 0));
 
         stats.setScoredGoals(stats.getScoredGoals() + 1);

@@ -16,7 +16,7 @@ public class PlayerStatisticsService {
 
     private final PlayerStatisticsDAO statsCrud;
 
-    public Optional<PlayerStatistics> getStatistics(String playerId, String seasonId) throws SQLException {
-        return statsCrud.findByPlayerIdAndSeasonId(playerId, seasonId);
+    public Optional<PlayerStatistics> getStatistics(String playerId, String seasonYear) throws SQLException {
+        return statsCrud.findByPlayerIdAndSeasonYear(playerId, seasonYear);
     }
 }
