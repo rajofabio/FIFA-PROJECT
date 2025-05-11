@@ -62,7 +62,7 @@ public class MatchService {
 
 
         List<Match> matches = new ArrayList<>();
-        LocalDateTime matchDate = LocalDateTime.now().plusDays(7); // Start in 1 week
+        LocalDateTime matchDate = LocalDateTime.now();
 
         for (int i = 0; i < clubs.size(); i++) {
             for (int j = i + 1; j < clubs.size(); j++) {
@@ -84,7 +84,6 @@ public class MatchService {
                 match.setClubPlayingAway(away);
 
                 matches.add(match);
-                matchDate = matchDate.plusDays(7);
             }
         }
 
