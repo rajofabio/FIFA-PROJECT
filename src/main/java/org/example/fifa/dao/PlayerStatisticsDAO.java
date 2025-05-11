@@ -24,7 +24,7 @@ public class PlayerStatisticsDAO {
         try (Connection conn = dataSource.getConnection();
              PreparedStatement stmt = conn.prepareStatement(query)) {
             stmt.setString(1, playerId);
-            stmt.setInt(2, Integer.parseInt(seasonYear)); // Conversion de l'année
+            stmt.setInt(2, Integer.parseInt(seasonYear));
             ResultSet rs = stmt.executeQuery();
             if (rs.next()) {
                 return Optional.of(new PlayerStatistics(
